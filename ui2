@@ -380,7 +380,7 @@ function Library:CreateWindow(windowname,windowinfo)
             
         end
 
-        function PageElements:addToggle(togglename,callback)
+        function PageElements:addToggle(togglename, arg2, arg3)
             local ToggleHolder = Instance.new("Frame")
             local ToggleHolderCorner = Instance.new("UICorner")
             local ToggleTitle = Instance.new("TextLabel")
@@ -389,9 +389,24 @@ function Library:CreateWindow(windowname,windowinfo)
             local ToggleFrameCorner = Instance.new("UICorner")
             local ToggleBall = Instance.new("Frame")
             local ToggleBallCorner = Instance.new("UICorner")
+            
+            -- NEW: Keybind Button Elements
+            local BindButton = Instance.new("TextButton") 
+            local BindButtonCorner = Instance.new("UICorner")
 
-            local callback = callback or function() end
+            local keybind, callback
+            if typeof(arg2) == "EnumItem" then
+                keybind = arg2
+                callback = arg3 or function() end
+            else
+                keybind = nil
+                callback = arg2 or function() end
+            end
+
             local ToggleEnabled = false
+            local isListening = false
+            local currentBind = keybind 
+            local UserInputService = game:GetService("UserInputService")
 
             ToggleHolder.Name = "ToggleHolder"
             ToggleHolder.Parent = Home
@@ -409,33 +424,44 @@ function Library:CreateWindow(windowname,windowinfo)
             ToggleTitle.Parent = ToggleHolder
             ToggleTitle.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
             ToggleTitle.BackgroundTransparency = 1.000
-            ToggleTitle.BorderColor3 = Color3.fromRGB(17, 17, 17)
             ToggleTitle.BorderSizePixel = 0
-            ToggleTitle.Position = UDim2.new(0.024305556, 0, 0, 0)
-            ToggleTitle.Size = UDim2.new(0, 195, 0, 24)
+            ToggleTitle.Position = UDim2.new(0.024, 0, 0, 0)
+            ToggleTitle.Size = UDim2.new(0, 150, 0, 24) -- Adjusted to fit the bind button
             ToggleTitle.Font = Enum.Font.GothamSemibold
             ToggleTitle.Text = togglename or ""
             ToggleTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
             ToggleTitle.TextSize = 11.000
             ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+            -- NEW: Bind Button Styling and Position
+            BindButton.Name = "BindButton"
+            BindButton.Parent = ToggleHolder
+            BindButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+            BindButton.BorderSizePixel = 0
+            BindButton.Position = UDim2.new(0.58, 0, 0.15, 0)
+            BindButton.Size = UDim2.new(0, 50, 0, 18)
+            BindButton.Font = Enum.Font.GothamSemibold
+            BindButton.Text = currentBind and currentBind.Name or "None"
+            BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+            BindButton.TextSize = 10.000
+            
+            BindButtonCorner.CornerRadius = UDim.new(0, 4)
+            BindButtonCorner.Name = "BindButtonCorner"
+            BindButtonCorner.Parent = BindButton
             
             ToggleButton.Name = "ToggleButton"
             ToggleButton.Parent = ToggleHolder
             ToggleButton.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
             ToggleButton.BackgroundTransparency = 1.000
-            ToggleButton.BorderColor3 = Color3.fromRGB(17, 17, 17)
             ToggleButton.Position = UDim2.new(0.802083313, 0, 1.17375305e-06, 0)
             ToggleButton.Size = UDim2.new(0, 57, 0, 25)
             ToggleButton.AutoButtonColor = false
             ToggleButton.Font = Enum.Font.SourceSans
             ToggleButton.Text = ""
-            ToggleButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-            ToggleButton.TextSize = 14.000
             
             ToggleFrame.Name = "ToggleFrame"
             ToggleFrame.Parent = ToggleButton
             ToggleFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
-            ToggleFrame.BorderColor3 = Color3.fromRGB(5, 5, 5)
             ToggleFrame.Position = UDim2.new(0.27192983, 0, 0.119999997, 0)
             ToggleFrame.Size = UDim2.new(0, 34, 0, 19)
             
@@ -452,7 +478,7 @@ function Library:CreateWindow(windowname,windowinfo)
             ToggleBallCorner.Name = "ToggleBallCorner"
             ToggleBallCorner.Parent = ToggleBall
 
-            ToggleButton.MouseButton1Down:Connect(function()
+            local function FireToggle()
                 ToggleEnabled = not ToggleEnabled
                 if ToggleEnabled then 
                     ToggleHolder.BackgroundColor3 = Color3.fromRGB(16,16,16)
@@ -468,6 +494,38 @@ function Library:CreateWindow(windowname,windowinfo)
                     ToggleBall:TweenPosition(UDim2.new(0.123, 0,0.158, 0),"Out","Linear",0.1)
                 end
                 pcall(callback,ToggleEnabled)
+            end
+
+            -- Normal UI Click
+            ToggleButton.MouseButton1Down:Connect(FireToggle)
+
+            -- NEW: Listen for user clicking the bind button
+            BindButton.MouseButton1Down:Connect(function()
+                isListening = true
+                BindButton.Text = "..."
+                BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            end)
+
+            -- NEW: Handle the actual input mapping
+            UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+                if isListening then
+                    if input.UserInputType == Enum.UserInputType.Keyboard then
+                        if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace then
+                            currentBind = nil
+                            BindButton.Text = "None"
+                        else
+                            currentBind = input.KeyCode
+                            BindButton.Text = currentBind.Name
+                        end
+                        BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+                        isListening = false
+                    end
+                else
+                    -- Only fire if they aren't typing in chat/menus and hit the correct key
+                    if not gameProcessedEvent and currentBind and input.KeyCode == currentBind then
+                        FireToggle()
+                    end
+                end
             end)
         end
 
