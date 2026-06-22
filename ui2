@@ -2,7 +2,6 @@
 local function DestroyYep()
     for x = 1,69 do 
         if game.CoreGui:FindFirstChild("fu8rj82n") then game.CoreGui:FindFirstChild("fu8rj82n"):Destroy() end
-        if game.CoreGui:FindFirstChild("LibraryNotifications") then game.CoreGui:FindFirstChild("LibraryNotifications"):Destroy() end
     end
 end
 
@@ -10,133 +9,7 @@ DestroyYep()
 
 wait(0.069)
 
-local TweenService = game:GetService("TweenService")
 local Library = {}
-
--- ==========================================
--- LOGS / NOTIFICATION SYSTEM (LEFT CENTER)
--- ==========================================
-local notifyGui = nil
-local activeNotifications = {}
-local maxNotifications = 3
-
-function Library:Notify(text, duration)
-    duration = duration or 3
-    
-    if not notifyGui then
-        notifyGui = Instance.new("ScreenGui")
-        notifyGui.Name = "LibraryNotifications"
-        notifyGui.Parent = game.CoreGui
-        notifyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    end
-
-    local finalWidth = 220
-    local finalHeight = 35
-    local padding = 8
-    local baseSpawnY = 80 -- Vertical position reference around left center
-
-    -- Create Elements
-    local notification = Instance.new("Frame")
-    local corner = Instance.new("UICorner")
-    local accent = Instance.new("Frame")
-    local label = Instance.new("TextLabel")
-
-    notification.Name = "Notification"
-    notification.Parent = notifyGui
-    notification.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    notification.BorderSizePixel = 0
-    notification.ClipsDescendants = true
-    
-    -- Anchor point set to center of the element for left/right expansion animation
-    notification.AnchorPoint = Vector2.new(0.5, 0.5)
-    notification.Size = UDim2.new(0, 0, 0, finalHeight) -- Starts at 0 width
-    notification.Position = UDim2.new(0, 25 + (finalWidth / 2), 0.5, baseSpawnY) -- Absolute Left-Center alignment
-
-    corner.CornerRadius = UDim.new(0, 5)
-    corner.Parent = notification
-
-    accent.Name = "Accent"
-    accent.Parent = notification
-    accent.BackgroundColor3 = Color3.fromRGB(137, 246, 255)
-    accent.BorderSizePixel = 0
-    accent.Size = UDim2.new(0, 3, 1, 0)
-    accent.Position = UDim2.new(0, 0, 0, 0)
-
-    label.Name = "Label"
-    label.Parent = notification
-    label.BackgroundTransparency = 1.000
-    label.Position = UDim2.new(0, 12, 0, 0)
-    label.Size = UDim2.new(1, -17, 1, 0)
-    label.Font = Enum.Font.GothamSemibold
-    label.Text = text or "Notification"
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 11.000
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextTransparency = 1.000 -- Starts invisible
-
-    -- Push existing notifications UP
-    for i = #activeNotifications, 1, -1 do
-        local oldData = activeNotifications[i]
-        if oldData and oldData.Frame then
-            oldData.TargetY = oldData.TargetY - (finalHeight + padding)
-            
-            -- If max count exceeded, fade out and remove the oldest one smoothly
-            if (#activeNotifications - i) >= maxNotifications - 1 then
-                task.spawn(function()
-                    TweenService:Create(oldData.Frame, TweenInfo.new(0.25, Enum.EasingStyle.QuadIn), {BackgroundTransparency = 1}):Play()
-                    TweenService:Create(oldData.Label, TweenInfo.new(0.25, Enum.EasingStyle.QuadIn), {TextTransparency = 1}):Play()
-                    TweenService:Create(oldData.Accent, TweenInfo.new(0.25, Enum.EasingStyle.QuadIn), {BackgroundTransparency = 1}):Play()
-                    wait(0.25)
-                    oldData.Frame:Destroy()
-                end)
-                table.remove(activeNotifications, i)
-            else
-                -- Shift up animation
-                TweenService:Create(oldData.Frame, TweenInfo.new(0.3, Enum.EasingStyle.QuadOut), {
-                    Position = UDim2.new(0, 25 + (finalWidth / 2), 0.5, oldData.TargetY)
-                }):Play()
-            end
-        end
-    end
-
-    -- Track current notification data
-    local currentData = {
-        Frame = notification,
-        Label = label,
-        Accent = accent,
-        TargetY = baseSpawnY
-    }
-    table.insert(activeNotifications, currentData)
-
-    -- Play Entrance Animation (Expands Left/Right exclusively from Center)
-    TweenService:Create(notification, TweenInfo.new(0.3, Enum.EasingStyle.QuadOut), {
-        Size = UDim2.new(0, finalWidth, 0, finalHeight)
-    }):Play()
-    
-    task.spawn(function()
-        wait(0.15)
-        TweenService:Create(label, TweenInfo.new(0.2, Enum.EasingStyle.Linear), {TextTransparency = 0}):Play()
-    end)
-
-    -- Automatic Outgoing Lifecycle Dismissal
-    task.spawn(function()
-        wait(duration)
-        -- Remove from active indexing table
-        for idx, data in ipairs(activeNotifications) do
-            if data.Frame == notification then
-                table.remove(activeNotifications, idx)
-                break
-            end
-        end
-        -- Exit transition fade animations
-        TweenService:Create(notification, TweenInfo.new(0.3, Enum.EasingStyle.QuadIn), {BackgroundTransparency = 1}):Play()
-        TweenService:Create(label, TweenInfo.new(0.3, Enum.EasingStyle.QuadIn), {TextTransparency = 1}):Play()
-        TweenService:Create(accent, TweenInfo.new(0.3, Enum.EasingStyle.QuadIn), {BackgroundTransparency = 1}):Play()
-        wait(0.3)
-        notification:Destroy()
-    end)
-end
-
 
 function Library:CreateWindow(windowname,windowinfo)
     local fu8rj82n = Instance.new("ScreenGui")
@@ -148,7 +21,6 @@ function Library:CreateWindow(windowname,windowinfo)
     local TabContainer_2 = Instance.new("UIListLayout")
     local PageContainer = Instance.new("Frame")
     local PageContainerCorner = Instance.new("UICorner")
-   
     local PageFolder = Instance.new("Folder")
     local Title = Instance.new("TextLabel")
     local Yep = Instance.new("TextButton")
@@ -269,6 +141,7 @@ function Library:CreateWindow(windowname,windowinfo)
 		wait(0.05)
 		YepTitle.BackgroundTransparency = 0.5
 		YepTitle.TextTransparency = 0.3
+		-- cre
 		Cre.ImageColor3 = Color3.fromRGB(137, 246, 255)
 		wait(0.05)
 		YepTitle.BackgroundTransparency = 0
@@ -281,6 +154,7 @@ function Library:CreateWindow(windowname,windowinfo)
 		wait(0.05)
 		YepTitle.BackgroundTransparency = 0.8
 		YepTitle.TextTransparency = 0.5
+		-- cre
 		Cre.ImageColor3 = Color3.fromRGB(255,255,255)
 		wait(0.05)
 		YepTitle.BackgroundTransparency = 1
@@ -289,6 +163,7 @@ function Library:CreateWindow(windowname,windowinfo)
     
 
     local UserInputService = game:GetService("UserInputService")
+	
 	local gui = Frame
 	
 	local dragging
@@ -328,6 +203,8 @@ function Library:CreateWindow(windowname,windowinfo)
     end)
 
     local FrameVisible = true
+
+
     local PageYep = {}
 
     function PageYep:addPage(pagename,scrollsize,visible,elementspacing)
@@ -335,7 +212,7 @@ function Library:CreateWindow(windowname,windowinfo)
         local TabCorner = Instance.new("UICorner")
         local Home = Instance.new("ScrollingFrame")
         local PageLayout = Instance.new("UIListLayout")
-    
+        
         Tab.Name = "Tab"
         Tab.Parent = TabContainer
         Tab.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
@@ -387,6 +264,7 @@ function Library:CreateWindow(windowname,windowinfo)
                     v.TextTransparency = 0.3
                 end
             end
+
         end)
 
         if visible == true then 
@@ -407,6 +285,7 @@ function Library:CreateWindow(windowname,windowinfo)
         Tab.MouseLeave:Connect(function()
             Tab.BackgroundColor3 = Color3.fromRGB(15,15,15)
         end)
+        -- end
 
         local PageElements = {}
 
@@ -498,9 +377,10 @@ function Library:CreateWindow(windowname,windowinfo)
                 Button.TextSize = 11
                 pcall(callback)
             end)
+            
         end
 
-        function PageElements:addToggle(togglename,callback)
+        function PageElements:addToggle(togglename, arg2, arg3)
             local ToggleHolder = Instance.new("Frame")
             local ToggleHolderCorner = Instance.new("UICorner")
             local ToggleTitle = Instance.new("TextLabel")
@@ -509,9 +389,24 @@ function Library:CreateWindow(windowname,windowinfo)
             local ToggleFrameCorner = Instance.new("UICorner")
             local ToggleBall = Instance.new("Frame")
             local ToggleBallCorner = Instance.new("UICorner")
+            
+            -- NEW: Keybind Button Elements
+            local BindButton = Instance.new("TextButton") 
+            local BindButtonCorner = Instance.new("UICorner")
 
-            local callback = callback or function() end
+            local keybind, callback
+            if typeof(arg2) == "EnumItem" then
+                keybind = arg2
+                callback = arg3 or function() end
+            else
+                keybind = nil
+                callback = arg2 or function() end
+            end
+
             local ToggleEnabled = false
+            local isListening = false
+            local currentBind = keybind 
+            local UserInputService = game:GetService("UserInputService")
 
             ToggleHolder.Name = "ToggleHolder"
             ToggleHolder.Parent = Home
@@ -529,33 +424,44 @@ function Library:CreateWindow(windowname,windowinfo)
             ToggleTitle.Parent = ToggleHolder
             ToggleTitle.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
             ToggleTitle.BackgroundTransparency = 1.000
-            ToggleTitle.BorderColor3 = Color3.fromRGB(17, 17, 17)
             ToggleTitle.BorderSizePixel = 0
-            ToggleTitle.Position = UDim2.new(0.024305556, 0, 0, 0)
-            ToggleTitle.Size = UDim2.new(0, 195, 0, 24)
+            ToggleTitle.Position = UDim2.new(0.024, 0, 0, 0)
+            ToggleTitle.Size = UDim2.new(0, 150, 0, 24) -- Adjusted to fit the bind button
             ToggleTitle.Font = Enum.Font.GothamSemibold
             ToggleTitle.Text = togglename or ""
             ToggleTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
             ToggleTitle.TextSize = 11.000
             ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+            -- NEW: Bind Button Styling and Position
+            BindButton.Name = "BindButton"
+            BindButton.Parent = ToggleHolder
+            BindButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+            BindButton.BorderSizePixel = 0
+            BindButton.Position = UDim2.new(0.58, 0, 0.15, 0)
+            BindButton.Size = UDim2.new(0, 50, 0, 18)
+            BindButton.Font = Enum.Font.GothamSemibold
+            BindButton.Text = currentBind and currentBind.Name or "None"
+            BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+            BindButton.TextSize = 10.000
+            
+            BindButtonCorner.CornerRadius = UDim.new(0, 4)
+            BindButtonCorner.Name = "BindButtonCorner"
+            BindButtonCorner.Parent = BindButton
             
             ToggleButton.Name = "ToggleButton"
             ToggleButton.Parent = ToggleHolder
             ToggleButton.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
             ToggleButton.BackgroundTransparency = 1.000
-            ToggleButton.BorderColor3 = Color3.fromRGB(17, 17, 17)
             ToggleButton.Position = UDim2.new(0.802083313, 0, 1.17375305e-06, 0)
             ToggleButton.Size = UDim2.new(0, 57, 0, 25)
             ToggleButton.AutoButtonColor = false
             ToggleButton.Font = Enum.Font.SourceSans
             ToggleButton.Text = ""
-            ToggleButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-            ToggleButton.TextSize = 14.000
             
             ToggleFrame.Name = "ToggleFrame"
             ToggleFrame.Parent = ToggleButton
             ToggleFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
-            ToggleFrame.BorderColor3 = Color3.fromRGB(5, 5, 5)
             ToggleFrame.Position = UDim2.new(0.27192983, 0, 0.119999997, 0)
             ToggleFrame.Size = UDim2.new(0, 34, 0, 19)
             
@@ -572,7 +478,7 @@ function Library:CreateWindow(windowname,windowinfo)
             ToggleBallCorner.Name = "ToggleBallCorner"
             ToggleBallCorner.Parent = ToggleBall
 
-            ToggleButton.MouseButton1Down:Connect(function()
+            local function FireToggle()
                 ToggleEnabled = not ToggleEnabled
                 if ToggleEnabled then 
                     ToggleHolder.BackgroundColor3 = Color3.fromRGB(16,16,16)
@@ -588,6 +494,38 @@ function Library:CreateWindow(windowname,windowinfo)
                     ToggleBall:TweenPosition(UDim2.new(0.123, 0,0.158, 0),"Out","Linear",0.1)
                 end
                 pcall(callback,ToggleEnabled)
+            end
+
+            -- Normal UI Click
+            ToggleButton.MouseButton1Down:Connect(FireToggle)
+
+            -- NEW: Listen for user clicking the bind button
+            BindButton.MouseButton1Down:Connect(function()
+                isListening = true
+                BindButton.Text = "..."
+                BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            end)
+
+            -- NEW: Handle the actual input mapping
+            UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+                if isListening then
+                    if input.UserInputType == Enum.UserInputType.Keyboard then
+                        if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace then
+                            currentBind = nil
+                            BindButton.Text = "None"
+                        else
+                            currentBind = input.KeyCode
+                            BindButton.Text = currentBind.Name
+                        end
+                        BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+                        isListening = false
+                    end
+                else
+                    -- Only fire if they aren't typing in chat/menus and hit the correct key
+                    if not gameProcessedEvent and currentBind and input.KeyCode == currentBind then
+                        FireToggle()
+                    end
+                end
             end)
         end
 
@@ -624,7 +562,7 @@ function Library:CreateWindow(windowname,windowinfo)
             SliderTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
             SliderTitle.TextSize = 11.000
             SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
-          
+            
             SliderHolderScript.CornerRadius = UDim.new(0, 5)
             SliderHolderScript.Name = "SliderHolderScript"
             SliderHolderScript.Parent = SliderHolder
@@ -671,28 +609,30 @@ function Library:CreateWindow(windowname,windowinfo)
             local mouse = game.Players.LocalPlayer:GetMouse()
             local uis = game:GetService("UserInputService")
             local Value;
+
             SliderButton.MouseButton1Down:Connect(function()
                 Value = math.floor((((tonumber(maxvalue) - tonumber(minvalue)) / 273) *SliderTrail.AbsoluteSize.X) + tonumber(minvalue)) or 0
-                callback(SliderNumber.Text)
+                    callback(SliderNumber.Text)
                 SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderTrail.AbsolutePosition.X, 0, 273), 0, 7)
                 moveconnection = mouse.Move:Connect(function()
                     SliderNumber.Text = Value
                     Value = math.floor((((tonumber(maxvalue) - tonumber(minvalue)) / 273) * SliderTrail.AbsoluteSize.X) + tonumber(minvalue))
-                    callback(SliderNumber.Text)
-                    SliderHolder.BackgroundColor3 = Color3.fromRGB(14,14,14)
+                        callback(SliderNumber.Text)
+                        SliderHolder.BackgroundColor3 = Color3.fromRGB(14,14,14)
                     SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderTrail.AbsolutePosition.X, 0, 273), 0, 7)
                 end)
                 releaseconnection = uis.InputEnded:Connect(function(Mouse)
                     if Mouse.UserInputType == Enum.UserInputType.MouseButton1 then
                         Value = math.floor((((tonumber(maxvalue) - tonumber(minvalue)) / 273) * SliderTrail.AbsoluteSize.X) + tonumber(minvalue))
-                        callback(SliderNumber.Text)
-                        SliderHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
+                            callback(SliderNumber.Text)
+                            SliderHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
                         SliderTrail.Size = UDim2.new(0, math.clamp(mouse.X - SliderTrail.AbsolutePosition.X, 0, 273), 0, 7)
                         moveconnection:Disconnect()
                         releaseconnection:Disconnect()
                     end
                 end)
             end)
+            --
         end
 
         function PageElements:addTextBox(textboxname,textboxdefault,callback)
@@ -744,13 +684,14 @@ function Library:CreateWindow(windowname,windowinfo)
             TextBoxHolderCorner.Parent = TextBoxHolder
 
             TextBox.Focused:Connect(function()
-               TextBoxHolder.BackgroundColor3 = Color3.fromRGB(10,10,10)
+                TextBoxHolder.BackgroundColor3 = Color3.fromRGB(10,10,10)
             end)
             
             TextBox.FocusLost:Connect(function()
                 TextBoxHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
                 callback(TextBox.Text)
             end)
+            --
         end
 
         function PageElements:addDropdown(dropdownname,list,scrollsize,callback)
@@ -845,6 +786,8 @@ function Library:CreateWindow(windowname,windowinfo)
             DropdownOptionContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
             DropdownOptionContainerLayout.Padding = UDim.new(0, 5)
 
+            -- Dropdown Toggle 
+             
             local function makeelements(bool)
                 for i,v in pairs(Home:GetChildren()) do 
                     if v:IsA("Frame") and v ~= DropdownHolder then 
@@ -865,8 +808,8 @@ function Library:CreateWindow(windowname,windowinfo)
                     DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.2)
                     wait(0.09)
                     Home.CanvasPosition = Vector2.new(0,0)
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.1)
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.1)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 115),"Out","Linear",0.1) -- check
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 106),"Out","Linear",0.1)-- check
                 else
                     DropDownEnabled = false
                     DropdownIcon.ImageColor3 = Color3.fromRGB(255,255,255)
@@ -878,8 +821,8 @@ function Library:CreateWindow(windowname,windowinfo)
                     makeelements(true)
                     DropdownContainer.Visible = false
                     wait(0.09)
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1)
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) -- check
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) -- check
                 end
             end)	
 
@@ -931,15 +874,14 @@ function Library:CreateWindow(windowname,windowinfo)
                     wait(0.3)
                     makeelements(true)
                     DropdownContainer.Visible = false
-                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1)
-                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1)
-                end)
+                    DropdownContainer:TweenSize(UDim2.new(0, 288,0, 4),"Out","Linear",0.1) -- check
+                    DropdownOptionContainer:TweenSize(UDim2.new(0, 288,0, 8),"Out","Linear",0.1) -- check
+                end) -- droplist ended
             end
         end
-
+        --
         return PageElements
     end
     return PageYep
 end
-
 return Library
