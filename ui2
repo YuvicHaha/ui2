@@ -204,20 +204,107 @@ function Library:CreateWindow(windowname,windowinfo)
 
     local FrameVisible = true
 
-    -- Enable clipping so hidden elements don't pop out when collapsed
-    Frame.ClipsDescendants = true 
+    local MinimizeBtn = Instance.new("TextButton")
+    local MinimizeCorner = Instance.new("UICorner")
 
-    -- Toggle minimization via Keybind (Right Control)
+    MinimizeBtn.Name = "MinimizeBtn"
+    MinimizeBtn.Parent = Frame
+    MinimizeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    MinimizeBtn.Position = UDim2.new(0.78, 0, 0.0495, 0) -- Fits right next to credits button
+    MinimizeBtn.Size = UDim2.new(0, 30, 0, 22)
+    MinimizeBtn.Font = Enum.Font.GothamBold
+    MinimizeBtn.Text = "-"
+    MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MinimizeBtn.TextSize = 14
+    MinimizeBtn.AutoButtonColor = true
+
+    MinimizeCorner.CornerRadius = UDim.new(0, 5)
+    MinimizeCorner.Parent = MinimizeBtn
+
+    -- 2. Create the Draggable Floating Toggle Button (Spawned hidden in parent ScreenGui)
+    local FloatingBtn = Instance.new("TextButton")
+    local FloatingCorner = Instance.new("UICorner")
+    local FloatingStroke = Instance.new("UIStroke")
+
+    FloatingBtn.Name = "SkidoFloatingBtn"
+    FloatingBtn.Parent = fu8rj82n -- Sibling to main Frame so it stays alive when Frame hidden
+    FloatingBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    FloatingBtn.BackgroundTransparency = 0.1
+    FloatingBtn.Position = UDim2.new(0.05, 0, 0.2, 0) -- Safe initial desktop/mobile boundary spawn
+    FloatingBtn.Size = UDim2.new(0, 65, 0, 35)
+    FloatingBtn.Font = Enum.Font.GothamBold
+    FloatingBtn.Text = "Skido"
+    FloatingBtn.TextColor3 = Color3.fromRGB(137, 246, 255) -- Cyan theme accent matching your dropdowns
+    FloatingBtn.TextSize = 12
+    FloatingBtn.Visible = false
+    FloatingBtn.Active = true
+
+    FloatingCorner.CornerRadius = UDim.new(0, 6)
+    FloatingCorner.Parent = FloatingBtn
+
+    FloatingStroke.Color = Color3.fromRGB(35, 35, 35)
+    FloatingStroke.Thickness = 1
+    FloatingStroke.Parent = FloatingBtn
+
+    -- 3. Custom Dragging Routine for the Floating Button (Mobile Touch + PC Mouse Supported)
+    local fDragging, fDragInput, fDragStart, fStartPos
+    
+    FloatingBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            fDragging = true
+            fDragStart = input.Position
+            fStartPos = FloatingBtn.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    fDragging = false
+                end
+            end)
+        end
+    end)
+
+    FloatingBtn.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            fDragInput = input
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == fDragInput and fDragging then
+            local delta = input.Position - fDragStart
+            FloatingBtn.Position = UDim2.new(
+                fStartPos.X.Scale, fStartPos.X.Offset + delta.X, 
+                fStartPos.Y.Scale, fStartPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    -- 4. Toggle Interaction Mappings
+    
+    -- Action A: Click Title Bar Minus Button (Hide script, open floating button)
+    MinimizeBtn.MouseButton1Click:Connect(function()
+        FrameVisible = false
+        Frame.Visible = false
+        FloatingBtn.Visible = true
+    end)
+
+    -- Action B: Click Floating Button (Hide floating button, bring script window back)
+    FloatingBtn.MouseButton1Click:Connect(function()
+        if not fDragging then -- Prevents triggering window return while dragging button across screen
+            FrameVisible = true
+            Frame.Visible = true
+            FloatingBtn.Visible = false
+        end
+    end)
+
+    -- Action C: PC Keybind Routine (RightShift) -> Total visibility override, skips button entirely
     game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.RightShift then
             FrameVisible = not FrameVisible
-            if FrameVisible then
-                -- Expand back to original size
-                Frame:TweenSize(UDim2.new(0, 432, 0, 285), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25, true)
-            else
-                -- Collapse down to show only the title bar height
-                Frame:TweenSize(UDim2.new(0, 432, 0, 42), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25, true)
-            end
+            Frame.Visible = FrameVisible
+            
+            -- Keep floating button clean hidden while PC user operates via keybind execution
+            FloatingBtn.Visible = false
         end
     end)
 
