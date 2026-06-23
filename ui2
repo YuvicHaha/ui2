@@ -517,11 +517,8 @@ function Library:CreateWindow(windowname,windowinfo)
     local currentBind = keybind 
     local UserInputService = game:GetService("UserInputService")
     
-    ----------------------------------------------------------------
-    -- FOR TESTING: Hardcoded to true so you can test the mobile 
-    -- "Show on Screen" buttons and dragging directly on PC.
-    ----------------------------------------------------------------
-    local isMobile = true 
+    -- RESTORED: Automatically detects device type dynamically
+    local isMobile = UserInputService.TouchEnabled
     local screenButton = nil
 
     ToggleHolder.Name = "ToggleHolder"
