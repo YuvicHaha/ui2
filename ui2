@@ -494,7 +494,7 @@ function Library:CreateWindow(windowname,windowinfo)
     local ToggleBall = Instance.new("Frame")
     local ToggleBallCorner = Instance.new("UICorner")
     
-    -- NEW: Keybind Button Elements
+    -- Keybind Button Elements
     local BindButton = Instance.new("TextButton") 
     local BindButtonCorner = Instance.new("UICorner")
 
@@ -505,7 +505,6 @@ function Library:CreateWindow(windowname,windowinfo)
         callback = arg3 or function() end
     else
         keybind = nil
-        -- If arg2 is a boolean (like false), ignore it and look for the function in arg3, otherwise default to arg2
         if typeof(arg2) == "boolean" then
             callback = arg3 or function() end
         else
@@ -517,6 +516,13 @@ function Library:CreateWindow(windowname,windowinfo)
     local isListening = false
     local currentBind = keybind 
     local UserInputService = game:GetService("UserInputService")
+    
+    ----------------------------------------------------------------
+    -- FOR TESTING: Hardcoded to true so you can test the mobile 
+    -- "Show on Screen" buttons and dragging directly on PC.
+    ----------------------------------------------------------------
+    local isMobile = true 
+    local screenButton = nil
 
     ToggleHolder.Name = "ToggleHolder"
     ToggleHolder.Parent = Home
@@ -543,7 +549,7 @@ function Library:CreateWindow(windowname,windowinfo)
     ToggleTitle.TextSize = 11.000
     ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
 
-    -- NEW: Bind Button Styling, Position, and Conditional Visibility
+    -- Bind Button Styling, Position, and Conditional Visibility
     BindButton.Name = "BindButton"
     BindButton.Parent = ToggleHolder
     BindButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
@@ -551,11 +557,26 @@ function Library:CreateWindow(windowname,windowinfo)
     BindButton.Position = UDim2.new(0.58, 0, 0.15, 0)
     BindButton.Size = UDim2.new(0, 50, 0, 18)
     BindButton.Font = Enum.Font.GothamSemibold
-    BindButton.Text = currentBind and currentBind.Name or "None"
+    
+    -- Mobile vs PC text adaptation
+    if isMobile then
+        BindButton.Text = "Show"
+        
+        -- Create/Retrieve global shared ScreenGui container for floating shortcuts
+        if not shared.SkidoMobileGui then
+            shared.SkidoMobileGui = Instance.new("ScreenGui")
+            shared.SkidoMobileGui.Name = "SkidoMobileScreenButtons"
+            shared.SkidoMobileGui.ResetOnSpawn = false
+            shared.SkidoMobileGui.Parent = (getgenv and getgenv().gethui and getgenv().gethui()) or game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+        end
+        shared.SkidoMobileOffsetCount = shared.SkidoMobileOffsetCount or 0
+    else
+        BindButton.Text = currentBind and currentBind.Name or "None"
+    end
+    
     BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
     BindButton.TextSize = 10.000
     
-    -- HIDE THE BIND BUTTON SEAMLESSLY IF FALSE PASSED IN ARG2
     if arg2 == false then
         BindButton.Visible = false
     else
@@ -595,6 +616,19 @@ function Library:CreateWindow(windowname,windowinfo)
     ToggleBallCorner.Name = "ToggleBallCorner"
     ToggleBallCorner.Parent = ToggleBall
 
+    -- Keeps mobile screen button color synchronized with active framework states
+    local function UpdateScreenButtonVisuals()
+        if screenButton then
+            if ToggleEnabled then
+                screenButton.BackgroundColor3 = Color3.fromRGB(40, 140, 70)
+                screenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            else
+                screenButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                screenButton.TextColor3 = Color3.fromRGB(160, 160, 160)
+            end
+        end
+    end
+
     local function FireToggle()
         ToggleEnabled = not ToggleEnabled
         if ToggleEnabled then 
@@ -610,42 +644,119 @@ function Library:CreateWindow(windowname,windowinfo)
             ToggleHolder.BackgroundColor3 = Color3.fromRGB(17,17,17)
             ToggleBall:TweenPosition(UDim2.new(0.123, 0,0.158, 0),"Out","Linear",0.1)
         end
+        
+        UpdateScreenButtonVisuals()
         pcall(callback, ToggleEnabled)
     end
 
     -- Normal UI Click
     ToggleButton.MouseButton1Down:Connect(FireToggle)
 
-    -- Listen for user clicking the bind button
-    BindButton.MouseButton1Down:Connect(function()
-        isListening = true
-        BindButton.Text = "..."
-        BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end)
-
-    -- Handle the actual input mapping
-    UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-        if isListening then
-            if input.UserInputType == Enum.UserInputType.Keyboard then
-                if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace then
-                    currentBind = nil
-                    BindButton.Text = "None"
-                else
-                    currentBind = input.KeyCode
-                    BindButton.Text = currentBind.Name
-                end
+    if isMobile then
+        -- Mobile Handling: Toggle floating shortcut button existence
+        BindButton.MouseButton1Down:Connect(function()
+            if screenButton then
+                screenButton:Destroy()
+                screenButton = nil
+                BindButton.Text = "Show"
                 BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
-                isListening = false
+            else
+                BindButton.Text = "Hide"
+                BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+                
+                screenButton = Instance.new("TextButton")
+                local screenCorner = Instance.new("UICorner")
+                
+                screenButton.Name = (togglename or "Toggle") .. "_Shortcut"
+                screenButton.Parent = shared.SkidoMobileGui
+                screenButton.Size = UDim2.new(0, 75, 0, 28)
+                
+                -- Calculate row allocation heights on the right flank to block absolute stacking overlays
+                local initialYOffset = (shared.SkidoMobileOffsetCount % 10) * 33
+                screenButton.Position = UDim2.new(1, -90, 0.35, initialYOffset)
+                shared.SkidoMobileOffsetCount = shared.SkidoMobileOffsetCount + 1
+                
+                screenButton.Font = Enum.Font.GothamBold
+                screenButton.Text = togglename or "Toggle"
+                screenButton.TextSize = 9.000
+                screenButton.TextWrapped = true
+                
+                screenCorner.CornerRadius = UDim.new(0, 5)
+                screenCorner.Parent = screenButton
+                
+                UpdateScreenButtonVisuals()
+                
+                -- Fast Click Execution Connection
+                screenButton.MouseButton1Down:Connect(FireToggle)
+                
+                -- Fully Responsive Mobile Touch Drag Mechanics
+                local dragging = false
+                local dragInput = nil
+                local dragStart = nil
+                local startPos = nil
+                
+                screenButton.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        dragging = true
+                        dragStart = input.Position
+                        startPos = screenButton.Position
+                        
+                        input.Changed:Connect(function()
+                            if input.UserInputState == Enum.UserInputState.End then
+                                dragging = false
+                            end
+                        end)
+                    end
+                end)
+                
+                screenButton.InputChanged:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
+                        dragInput = input
+                    end
+                end)
+                
+                UserInputService.InputChanged:Connect(function(input)
+                    if input == dragInput and dragging then
+                        local delta = input.Position - dragStart
+                        screenButton.Position = UDim2.new(
+                            startPos.X.Scale, 
+                            startPos.X.Offset + delta.X, 
+                            startPos.Y.Scale, 
+                            startPos.Y.Offset + delta.Y
+                        )
+                    end
+                end)
             end
-        else
-            -- Only fire if they aren't typing in chat/menus, have a valid bind, and the button is active
-            if not gameProcessedEvent and currentBind and input.KeyCode == currentBind and BindButton.Visible then
-                FireToggle()
-            end
-        end
-    end)
-end
+        end)
+    else
+        -- PC Keyboard Input Keybind Mapping
+        BindButton.MouseButton1Down:Connect(function()
+            isListening = true
+            BindButton.Text = "..."
+            BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end)
 
+        UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+            if isListening then
+                if input.UserInputType == Enum.UserInputType.Keyboard then
+                    if input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.Backspace then
+                        currentBind = nil
+                        BindButton.Text = "None"
+                    else
+                        currentBind = input.KeyCode
+                        BindButton.Text = currentBind.Name
+                    end
+                    BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
+                    isListening = false
+                end
+            else
+                if not gameProcessedEvent and currentBind and input.KeyCode == currentBind and BindButton.Visible then
+                    FireToggle()
+                end
+            end
+        end)
+    end
+end
         function PageElements:addSlider(slidername,minvalue,maxvalue,callback)
     local SliderHolder = Instance.new("Frame")
     local SliderTitle = Instance.new("TextLabel")
