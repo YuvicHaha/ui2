@@ -204,6 +204,23 @@ function Library:CreateWindow(windowname,windowinfo)
 
     local FrameVisible = true
 
+    -- Enable clipping so hidden elements don't pop out when collapsed
+    Frame.ClipsDescendants = true 
+
+    -- Toggle minimization via Keybind (Right Control)
+    game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
+            FrameVisible = not FrameVisible
+            if FrameVisible then
+                -- Expand back to original size
+                Frame:TweenSize(UDim2.new(0, 432, 0, 285), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25, true)
+            else
+                -- Collapse down to show only the title bar height
+                Frame:TweenSize(UDim2.new(0, 432, 0, 42), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25, true)
+            end
+        end
+    end)
+
 
     local PageYep = {}
 
