@@ -510,6 +510,11 @@ function Library:CreateWindow(windowname,windowinfo)
         end
     end
 
+    -- Filter out explicitly passed Unknown keycodes from registering as an active keybind
+    if keybind == Enum.KeyCode.Unknown then
+        keybind = nil
+    end
+
     local ToggleEnabled = false
     local isListening = false
     local currentBind = keybind 
@@ -738,14 +743,18 @@ function Library:CreateWindow(windowname,windowinfo)
                         currentBind = nil
                         BindButton.Text = "None"
                     else
-                        currentBind = input.KeyCode
-                        BindButton.Text = currentBind.Name
+                        -- Filter assigning to unknown altogether during setup listening
+                        if input.KeyCode ~= Enum.KeyCode.Unknown then
+                            currentBind = input.KeyCode
+                            BindButton.Text = currentBind.Name
+                        end
                     end
                     BindButton.TextColor3 = Color3.fromRGB(150, 150, 150)
                     isListening = false
                 end
             else
-                if not gameProcessedEvent and currentBind and input.KeyCode == currentBind and BindButton.Visible then
+                -- EXPLICIT FILTER: Check that currentBind exists and is not Unknown before allowing input firing
+                if not gameProcessedEvent and currentBind and currentBind ~= Enum.KeyCode.Unknown and input.KeyCode == currentBind and BindButton.Visible then
                     FireToggle()
                 end
             end
